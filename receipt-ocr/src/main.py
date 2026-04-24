@@ -2,7 +2,7 @@
 Main entry point for the receipt OCR pipeline.
 """
 
-from extract import extract_store_name, extract_total
+from extract import extract_date, extract_store_name, extract_total
 from ocr import extract_text
 
 
@@ -19,6 +19,9 @@ def main() -> None:
 
         store, conf = extract_store_name(texts)
         print("Store:", store, "Confidence:", conf)
+
+        date, conf = extract_date(texts)
+        print("Date:", date, "Confidence:", conf)
     except FileNotFoundError as error:
         print(error)
     except Exception as error:
