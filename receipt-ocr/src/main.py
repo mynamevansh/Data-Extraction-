@@ -42,6 +42,14 @@ def is_valid_summary_total(value: float) -> bool:
     return 0.0 <= value <= MAX_REASONABLE_TOTAL
 
 
+def parse_cli_args() -> tuple[str | None, bool]:
+    args = sys.argv[1:]
+    force_reprocess = "--force" in args
+    filtered_args = [arg for arg in args if arg != "--force"]
+    target_file = filtered_args[0] if filtered_args else None
+    return target_file, force_reprocess
+
+
 def generate_expense_summary(output_folder: str = "outputs") -> dict[str, float | int]:
     output_path = Path(output_folder)
     json_files = sorted(
@@ -94,9 +102,10 @@ def process_folder(input_folder: str = "data", output_folder: str = "outputs") -
     input_path = Path(input_folder)
     output_path = Path(output_folder)
     output_path.mkdir(parents=True, exist_ok=True)
+    target_file, force_reprocess = parse_cli_args()
 
-    if len(sys.argv) > 1:
-        image_files = [input_path / sys.argv[1]]
+    if target_file is not None:
+        image_files = [input_path / target_file]
     else:
         image_files = sorted(
             path
@@ -111,7 +120,7 @@ def process_folder(input_folder: str = "data", output_folder: str = "outputs") -
                 continue
 
             output_file = output_path / f"{image_path.stem}.json"
-            if output_file.exists():
+            if output_file.exists() and not force_reprocess:
                 print(f"Skipping {image_path.name} (already processed)")
                 continue
 

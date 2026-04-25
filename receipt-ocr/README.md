@@ -50,6 +50,18 @@ python src/main.py
 python src/main.py receipt3.jpg
 ```
 
+### 4) Reprocess even if output already exists
+
+```bash
+python src/main.py --force
+```
+
+### 5) Run basic validation tests
+
+```bash
+python test.py
+```
+
 ## Example Output (JSON)
 
 ```json
