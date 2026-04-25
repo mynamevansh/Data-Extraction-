@@ -6,6 +6,8 @@ from extract import extract_date, extract_store_name, extract_total
 from ocr import extract_text
 from output import build_output
 
+MAX_REASONABLE_TOTAL = 100000.0
+
 
 def process_image(image_path: str) -> dict[str, dict[str, float | str | bool]] | None:
     texts = extract_text(image_path)
@@ -36,6 +38,10 @@ def to_float(value: object) -> float:
         return 0.0
 
 
+def is_valid_summary_total(value: float) -> bool:
+    return 0.0 <= value <= MAX_REASONABLE_TOTAL
+
+
 def generate_expense_summary(output_folder: str = "outputs") -> dict[str, float | int]:
     output_path = Path(output_folder)
     json_files = sorted(
@@ -56,7 +62,9 @@ def generate_expense_summary(output_folder: str = "outputs") -> dict[str, float 
             continue
 
         total_amount = data.get("total_amount", {})
-        total_spent += to_float(total_amount.get("value"))
+        amount_value = to_float(total_amount.get("value"))
+        if is_valid_summary_total(amount_value):
+            total_spent += amount_value
         confidence_sum += to_float(total_amount.get("confidence"))
         if bool(total_amount.get("low_confidence")):
             low_confidence_receipts += 1

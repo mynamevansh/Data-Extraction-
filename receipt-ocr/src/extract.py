@@ -8,6 +8,7 @@ TOTAL_KEYWORDS = (
     ("amount", 3),
     ("total", 2),
 )
+MAX_REASONABLE_TOTAL = 100000.0
 
 
 def clean_amount(text):
@@ -24,7 +25,12 @@ def normalize_total_value(value):
     cleaned = clean_amount(str(value))
     if not re.fullmatch(r"\d+(?:\.\d{1,2})?", cleaned):
         return None
-    return f"{float(cleaned):.2f}"
+    if "." not in cleaned and len(cleaned) > 6:
+        return None
+    numeric_value = float(cleaned)
+    if numeric_value <= 0 or numeric_value > MAX_REASONABLE_TOTAL:
+        return None
+    return f"{numeric_value:.2f}"
 
 
 def _keyword_score(text: str) -> int:
