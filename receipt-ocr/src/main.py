@@ -14,14 +14,19 @@ def print_debug_logs(texts: list[dict[str, float | str]]) -> None:
         print(f'Text: {item["text"]} | Confidence: {item["confidence"]:.2f}')
 
 
-def process_image(image_path: str) -> dict[str, dict[str, float | str | bool]]:
+def process_image(image_path: str) -> dict[str, dict[str, float | str | bool]] | None:
     texts = extract_text(image_path)
+    if not texts:
+        return None
     if DEBUG:
         print_debug_logs(texts)
 
     store, store_conf = extract_store_name(texts)
     date, date_conf = extract_date(texts)
     total, total_conf = extract_total(texts)
+    if total is None:
+        total = "0.00"
+        total_conf = 0.0
 
     return build_output(
         store,
@@ -113,6 +118,9 @@ def process_folder(input_folder: str = "data", output_folder: str = "outputs") -
 
             print(f"Processing {image_path.name}...")
             final_output = process_image(str(image_path))
+            if final_output is None:
+                print(f"Failed to process {image_path.name}: no text extracted")
+                continue
             with output_file.open("w", encoding="utf-8") as file:
                 json.dump(final_output, file, indent=2)
 

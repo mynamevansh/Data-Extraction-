@@ -3,10 +3,18 @@ from datetime import datetime
 
 
 def clean_amount(text):
-    text = text.replace(" ", ".")
+    text = text.replace(" ", "")
+    text = text.replace(",", ".")
     text = text.replace("O", "0").replace("o", "0")
     text = text.replace("u", "0")
     return text
+
+
+def normalize_total_value(value):
+    cleaned = clean_amount(str(value))
+    if not re.fullmatch(r"\d+(?:\.\d{1,2})?", cleaned):
+        return None
+    return f"{float(cleaned):.2f}"
 
 
 def extract_total(texts):
@@ -37,7 +45,9 @@ def extract_total(texts):
                 conf = t["confidence"]
 
             if numbers:
-                value = clean_amount(numbers[-1])
+                value = normalize_total_value(numbers[-1])
+                if value is None:
+                    continue
 
                 if score > best_score:
                     best_score = score
