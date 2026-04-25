@@ -1,0 +1,15 @@
+{
+  "store_name": {
+    "value": "(1127686-K)",
+    "confidence": 0.99
+  },
+  "date": {
+    "value": "",
+    "confidence": 0.0,
+    "low_confidence": true
+  },
+  "total_amount": {
+    "value": "63.00",
+    "confidence": 0.98
+  }
+}
