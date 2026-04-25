@@ -1,0 +1,15 @@
+{
+  "store_name": {
+    "value": "YONG CEN ENTERPRISE",
+    "confidence": 1.0
+  },
+  "date": {
+    "value": "2018-01-06",
+    "confidence": 0.65,
+    "low_confidence": true
+  },
+  "total_amount": {
+    "value": "24",
+    "confidence": 1.0
+  }
+}

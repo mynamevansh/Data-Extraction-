@@ -2,19 +2,21 @@
 
 from __future__ import annotations
 
+import io
 import os
 import warnings
+from contextlib import redirect_stderr, redirect_stdout
 from typing import Dict, List
 
 import easyocr
 
 
 def extract_text(image_path: str) -> List[Dict[str, float | str]]:
-    """Extract text and confidence scores from an image path."""
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image not found: {image_path}")
 
-    reader = easyocr.Reader(["en"], gpu=False)
+    with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+        reader = easyocr.Reader(["en"], gpu=False)
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore",

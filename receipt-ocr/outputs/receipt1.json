@@ -1,0 +1,16 @@
+{
+  "store_name": {
+    "value": "SATU KAMPUNG ENTERPRISE",
+    "confidence": 1.0
+  },
+  "date": {
+    "value": "2021-10-13",
+    "confidence": 0.3,
+    "low_confidence": true
+  },
+  "total_amount": {
+    "value": "63.00",
+    "confidence": 0.59,
+    "low_confidence": true
+  }
+}

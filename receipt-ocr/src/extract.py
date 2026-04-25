@@ -1,13 +1,8 @@
-"""
-Field extraction logic for parsed OCR text.
-"""
-
 import re
 from datetime import datetime
 
 
 def clean_amount(text):
-    # fix OCR mistakes
     text = text.replace(" ", ".")
     text = text.replace("O", "0").replace("o", "0")
     text = text.replace("u", "0")
@@ -23,7 +18,6 @@ def extract_total(texts):
 
         score = 0
 
-        # scoring logic
         if "inclusive" in text:
             score = 5
         elif "grand total" in text:
@@ -34,7 +28,6 @@ def extract_total(texts):
             score = 1
 
         if score > 0:
-            # try extracting number
             numbers = re.findall(r"\d+[\.\s]?\d*", t["text"])
 
             if not numbers and i + 1 < len(texts):
@@ -54,7 +47,6 @@ def extract_total(texts):
 
 
 def extract_store_name(texts):
-    """Extract store name from first OCR lines using confidence and uppercase preference."""
     ignored_words = {"POSTED", "TEL"}
     candidates = []
 
@@ -67,7 +59,6 @@ def extract_store_name(texts):
         if upper_text in ignored_words:
             continue
 
-        # Skip very short labels/noise.
         if len(raw_text) < 3:
             continue
 
@@ -84,7 +75,6 @@ def extract_store_name(texts):
 
 
 def _clean_date_text(text):
-    """Fix common OCR mistakes in date-like text while keeping separators."""
     replacements = {
         "O": "0",
         "o": "0",
@@ -102,7 +92,6 @@ def _clean_date_text(text):
 
 
 def _to_iso_date(day, month, year):
-    """Convert parsed date parts to ISO format."""
     day = int(day)
     month = int(month)
     year = int(year)
@@ -121,7 +110,6 @@ def normalize_date_from_8digits(s):
 
     dd, mm, yyyy = s[:2], s[2:4], s[4:]
 
-    # fix year if OCR messed it
     if int(yyyy) < 1900:
         yyyy = "20" + yyyy[-2:]
 
@@ -132,16 +120,13 @@ def normalize_date_from_8digits(s):
 
 
 def _extract_date_from_line(text):
-    """Extract a date from one line and return ISO format or None."""
     cleaned = _clean_date_text(text)
 
-    # Patterns: dd/mm/yyyy, dd-mm-yyyy, dd.mm.yyyy, and 2-digit years.
     for match in re.finditer(r"\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})\b", cleaned):
         iso = _to_iso_date(match.group(1), match.group(2), match.group(3))
         if iso:
             return iso
 
-    # Pattern: 8-digit compact date, e.g. 13101221 -> 2021-10-13
     for match in re.finditer(r"\b(\d{8})\b", cleaned):
         iso = normalize_date_from_8digits(match.group(1))
         if iso:
@@ -155,18 +140,10 @@ def _extract_date_from_line(text):
 
 
 def extract_date(texts):
-    """
-    Extract date from OCR lines and return (iso_date, confidence).
-    Priority:
-    1) lines near keywords: date, dale, invoice
-    2) regex date patterns with separators
-    3) compact digit dates
-    """
     keywords = ("date", "dale", "invoice")
     best = None
     best_score = -1.0
 
-    # First pass: prioritize keyword-near lines.
     for i, item in enumerate(texts):
         line = str(item.get("text", ""))
         line_lower = line.lower()
@@ -182,12 +159,11 @@ def extract_date(texts):
                 cand_conf = float(cand.get("confidence", 0.0))
                 iso = _extract_date_from_line(cand_line)
                 if iso:
-                    score = cand_conf + 1.0  # keyword proximity bonus
+                    score = cand_conf + 1.0
                     if score > best_score:
                         best_score = score
                         best = (iso, cand_conf)
 
-    # Second pass: any line with date patterns.
     if best is None:
         for item in texts:
             line = str(item.get("text", ""))

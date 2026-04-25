@@ -1,0 +1,16 @@
+{
+  "store_name": {
+    "value": "53300 KUALA LUMPUR",
+    "confidence": 0.68,
+    "low_confidence": true
+  },
+  "date": {
+    "value": "",
+    "confidence": 0.0,
+    "low_confidence": true
+  },
+  "total_amount": {
+    "value": "40",
+    "confidence": 1.0
+  }
+}

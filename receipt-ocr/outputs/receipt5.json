@@ -1,0 +1,16 @@
+{
+  "store_name": {
+    "value": "cn)",
+    "confidence": 0.77
+  },
+  "date": {
+    "value": "",
+    "confidence": 0.0,
+    "low_confidence": true
+  },
+  "total_amount": {
+    "value": "39",
+    "confidence": 0.5,
+    "low_confidence": true
+  }
+}
