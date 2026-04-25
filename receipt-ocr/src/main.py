@@ -33,6 +33,59 @@ def process_image(image_path: str) -> dict[str, dict[str, float | str | bool]]:
     )
 
 
+def to_float(value: object) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def generate_expense_summary(output_folder: str = "outputs") -> dict[str, float | int]:
+    output_path = Path(output_folder)
+    json_files = sorted(
+        path
+        for path in output_path.glob("*.json")
+        if path.is_file() and path.name != "summary.json"
+    )
+
+    total_spent = 0.0
+    confidence_sum = 0.0
+    low_confidence_receipts = 0
+
+    for file_path in json_files:
+        try:
+            with file_path.open("r", encoding="utf-8") as file:
+                data = json.load(file)
+        except (OSError, json.JSONDecodeError):
+            continue
+
+        total_amount = data.get("total_amount", {})
+        total_spent += to_float(total_amount.get("value"))
+        confidence_sum += to_float(total_amount.get("confidence"))
+        if bool(total_amount.get("low_confidence")):
+            low_confidence_receipts += 1
+
+    total_receipts = len(json_files)
+    average_confidence = (
+        round(confidence_sum / total_receipts, 2) if total_receipts > 0 else 0.0
+    )
+    summary = {
+        "total_receipts": total_receipts,
+        "total_spent": round(total_spent, 2),
+        "average_confidence": average_confidence,
+        "low_confidence_receipts": low_confidence_receipts,
+    }
+
+    summary_file = output_path / "summary.json"
+    with summary_file.open("w", encoding="utf-8") as file:
+        json.dump(summary, file, indent=2)
+
+    print("Expense summary:")
+    print(json.dumps(summary, indent=2))
+    print(f"Saved to {summary_file.as_posix()}")
+    return summary
+
+
 def process_folder(input_folder: str = "data", output_folder: str = "outputs") -> None:
     input_path = Path(input_folder)
     output_path = Path(output_folder)
@@ -70,6 +123,7 @@ def process_folder(input_folder: str = "data", output_folder: str = "outputs") -
 
 def main() -> None:
     process_folder("data", "outputs")
+    generate_expense_summary("outputs")
 
 
 if __name__ == "__main__":
