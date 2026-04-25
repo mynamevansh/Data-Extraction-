@@ -1,6 +1,4 @@
-"""
-OCR inference module using EasyOCR.
-"""
+
 
 from __future__ import annotations
 
