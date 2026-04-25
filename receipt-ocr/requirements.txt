@@ -1,2 +1,2 @@
-# Add project dependencies here
-
+easyocr
+opencv-python

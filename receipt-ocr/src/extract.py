@@ -1,12 +1,22 @@
 import re
 from datetime import datetime
 
+TOTAL_KEYWORDS = (
+    ("inclusive", 6),
+    ("grand total", 5),
+    ("total sales", 4),
+    ("amount", 3),
+    ("total", 2),
+)
+
 
 def clean_amount(text):
+    text = str(text)
     text = text.replace(" ", "")
     text = text.replace(",", ".")
     text = text.replace("O", "0").replace("o", "0")
     text = text.replace("u", "0")
+    text = re.sub(r"[^\d.]", "", text)
     return text
 
 
@@ -17,40 +27,49 @@ def normalize_total_value(value):
     return f"{float(cleaned):.2f}"
 
 
+def _keyword_score(text: str) -> int:
+    lowered = text.lower()
+    for keyword, score in TOTAL_KEYWORDS:
+        if keyword in lowered:
+            return score
+    return 0
+
+
+def _extract_numeric_candidates(text: str) -> list[str]:
+    matches = re.findall(r"(?:\d[\dOou,\.\s]{0,}\d|\d)", text)
+    values: list[str] = []
+    for match in matches:
+        normalized = normalize_total_value(match)
+        if normalized is not None:
+            values.append(normalized)
+    return values
+
+
 def extract_total(texts):
     best_match = None
-    best_score = 0
+    best_priority = -1
+    best_confidence = 0.0
 
     for i, t in enumerate(texts):
-        text = t["text"].lower()
-
-        score = 0
-
-        if "inclusive" in text:
-            score = 5
-        elif "grand total" in text:
-            score = 4
-        elif "total sales" in text:
-            score = 3
-        elif "total" in text:
-            score = 1
+        line_text = str(t.get("text", ""))
+        score = _keyword_score(line_text)
 
         if score > 0:
-            numbers = re.findall(r"\d+[\.\s]?\d*", t["text"])
+            numbers = _extract_numeric_candidates(line_text)
+            conf = float(t.get("confidence", 0.0))
 
             if not numbers and i + 1 < len(texts):
-                numbers = re.findall(r"\d+[\.\s]?\d*", texts[i + 1]["text"])
-                conf = texts[i + 1]["confidence"]
-            else:
-                conf = t["confidence"]
+                next_text = str(texts[i + 1].get("text", ""))
+                numbers = _extract_numeric_candidates(next_text)
+                conf = float(texts[i + 1].get("confidence", 0.0))
 
             if numbers:
-                value = normalize_total_value(numbers[-1])
-                if value is None:
-                    continue
-
-                if score > best_score:
-                    best_score = score
+                value = numbers[-1]
+                if score > best_priority or (
+                    score == best_priority and conf > best_confidence
+                ):
+                    best_priority = score
+                    best_confidence = conf
                     best_match = (value, conf)
 
     return best_match if best_match else (None, 0.0)

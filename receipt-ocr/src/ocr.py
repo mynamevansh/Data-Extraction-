@@ -10,6 +10,8 @@ from typing import Dict, List
 
 import easyocr
 
+from preprocess import preprocess_image
+
 
 def extract_text(image_path: str) -> List[Dict[str, float | str]]:
     if not os.path.exists(image_path):
@@ -26,7 +28,9 @@ def extract_text(image_path: str) -> List[Dict[str, float | str]]:
             ),
             category=UserWarning,
         )
-        results = reader.readtext(image_path)
+        preprocessed_image = preprocess_image(image_path)
+        image_source = preprocessed_image if preprocessed_image is not None else image_path
+        results = reader.readtext(image_source)
 
     extracted: List[Dict[str, float | str]] = []
     for _, text, confidence in results:

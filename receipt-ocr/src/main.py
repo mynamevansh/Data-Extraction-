@@ -6,20 +6,11 @@ from extract import extract_date, extract_store_name, extract_total
 from ocr import extract_text
 from output import build_output
 
-DEBUG = False
-
-
-def print_debug_logs(texts: list[dict[str, float | str]]) -> None:
-    for item in texts:
-        print(f'Text: {item["text"]} | Confidence: {item["confidence"]:.2f}')
-
 
 def process_image(image_path: str) -> dict[str, dict[str, float | str | bool]] | None:
     texts = extract_text(image_path)
     if not texts:
         return None
-    if DEBUG:
-        print_debug_logs(texts)
 
     store, store_conf = extract_store_name(texts)
     date, date_conf = extract_date(texts)
