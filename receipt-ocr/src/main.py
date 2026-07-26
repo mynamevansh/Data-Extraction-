@@ -2,9 +2,9 @@ import json
 import sys
 from pathlib import Path
 
-from extract import extract_date, extract_store_name, extract_total
-from ocr import extract_text
-from output import build_output
+from .extract import extract_date, extract_store_name, extract_total
+from .ocr import extract_text
+from .output import build_output
 
 MAX_REASONABLE_TOTAL = 100000.0
 

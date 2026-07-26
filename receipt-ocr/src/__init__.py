@@ -1,0 +1,1 @@
+"""Receipt OCR backend package."""

@@ -1,15 +1,9 @@
 from __future__ import annotations
 
-from importlib import import_module
-import sys
 import re
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).parent / "src"))
-
-main_module = import_module("main")
-generate_expense_summary = main_module.generate_expense_summary
-process_image = main_module.process_image
+from src.main import generate_expense_summary, process_image
 
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 

@@ -10,7 +10,7 @@ from typing import Dict, List
 
 import easyocr
 
-from preprocess import preprocess_image
+from .preprocess import preprocess_image
 
 
 def extract_text(image_path: str) -> List[Dict[str, float | str]]:

@@ -1,18 +1,14 @@
 from __future__ import annotations
 
-from importlib import import_module
 import os
 import shutil
-import sys
 import tempfile
 from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-sys.path.append(str(Path(__file__).parent))
-
-process_image = import_module("src.main").process_image
+from src.main import process_image
 
 app = FastAPI(
     title="Receipt OCR API",

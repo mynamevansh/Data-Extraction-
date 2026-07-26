@@ -1,4 +1,4 @@
-from confidence import is_suspicious_value, normalize_confidence
+from .confidence import is_suspicious_value, normalize_confidence
 
 
 def _normalize_value(value):
