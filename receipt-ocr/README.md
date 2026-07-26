@@ -17,8 +17,8 @@ The system combines OCR text recognition with rule-based extraction logic to ide
 
 ```text
 receipt-ocr/
-│── data/                  # Input receipt images
-│── outputs/               # Generated JSON outputs
+│── data/
+│── outputs/
 │── src/
 │   ├── main.py
 │   ├── ocr.py

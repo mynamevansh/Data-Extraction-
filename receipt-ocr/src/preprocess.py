@@ -2,7 +2,7 @@ from __future__ import annotations
 
 try:
     import cv2
-except ImportError:  # pragma: no cover - runtime safeguard if OpenCV is missing
+except ImportError:
     cv2 = None
 
 
