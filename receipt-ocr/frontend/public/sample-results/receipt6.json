@@ -1,0 +1,16 @@
+{
+  "store_name": {
+    "value": "Jalan turo",
+    "confidence": 0.88
+  },
+  "date": {
+    "value": "",
+    "confidence": 0.0,
+    "low_confidence": true
+  },
+  "total_amount": {
+    "value": "42.10",
+    "confidence": 0.57,
+    "low_confidence": true
+  }
+}

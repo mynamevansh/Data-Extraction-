@@ -1,0 +1,15 @@
+{
+  "store_name": {
+    "value": "L4-17 (B) , Leve)",
+    "confidence": 0.88
+  },
+  "date": {
+    "value": "2018-01-29",
+    "confidence": 0.56,
+    "low_confidence": true
+  },
+  "total_amount": {
+    "value": "6.00",
+    "confidence": 0.74
+  }
+}

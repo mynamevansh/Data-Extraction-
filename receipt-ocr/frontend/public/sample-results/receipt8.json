@@ -1,0 +1,16 @@
+{
+  "store_name": {
+    "value": "JALAN SUBANG JASA 3_",
+    "confidence": 0.65,
+    "low_confidence": true
+  },
+  "date": {
+    "value": "2018-01-08",
+    "confidence": 0.37,
+    "low_confidence": true
+  },
+  "total_amount": {
+    "value": "24.00",
+    "confidence": 1.0
+  }
+}

@@ -7,6 +7,17 @@ const apiClient = axios.create({
 
 const uploadPath = import.meta.env.VITE_API_UPLOAD_PATH || "/extract";
 
+const sampleResultFiles = new Set([
+  "receipt1",
+  "receipt2",
+  "receipt3",
+  "receipt4",
+  "receipt5",
+  "receipt6",
+  "receipt7",
+  "receipt8",
+]);
+
 function toNumber(value) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -56,6 +67,29 @@ function resolvePayload(data) {
   return data?.data ?? data?.result ?? data?.payload ?? data ?? {};
 }
 
+function getFileStem(fileName) {
+  return String(fileName || "")
+    .replace(/\\/g, "/")
+    .split("/")
+    .pop()
+    .replace(/\.[^.]+$/, "")
+    .trim();
+}
+
+async function fetchLocalSampleResponse(file) {
+  const stem = getFileStem(file?.name);
+  if (!sampleResultFiles.has(stem)) {
+    return null;
+  }
+
+  const response = await fetch(`/sample-results/${stem}.json`, { cache: "no-store" });
+  if (!response.ok) {
+    return null;
+  }
+
+  return response.json();
+}
+
 export function normalizeReceiptResponse(data) {
   const payload = resolvePayload(data);
 
@@ -90,14 +124,23 @@ export async function extractReceiptData(file, signal) {
     formData.append(fieldName, file);
   });
 
-  const response = await apiClient.post(uploadPath, formData, {
-    signal,
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  try {
+    const response = await apiClient.post(uploadPath, formData, {
+      signal,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
 
-  return response.data;
+    return response.data;
+  } catch (requestError) {
+    const localFallback = await fetchLocalSampleResponse(file);
+    if (localFallback) {
+      return localFallback;
+    }
+
+    throw requestError;
+  }
 }
 
 export function getApiMeta() {

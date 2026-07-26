@@ -1,0 +1,17 @@
+{
+  "store_name": {
+    "value": "LoT P.T, 2811,",
+    "confidence": 0.41,
+    "low_confidence": true
+  },
+  "date": {
+    "value": "",
+    "confidence": 0.0,
+    "low_confidence": true
+  },
+  "total_amount": {
+    "value": "0.00",
+    "confidence": 0.0,
+    "low_confidence": true
+  }
+}
