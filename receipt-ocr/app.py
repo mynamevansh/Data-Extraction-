@@ -5,11 +5,14 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
+from src.excel_generator import generate_full_workbook
 from src.main import process_image
 from src.pdf import extract_pdf
+from src.pdf_structure import extract_pdf_structure
 
 app = FastAPI(
     title="Receipt OCR API",
@@ -66,6 +69,62 @@ async def extract_receipt(file: UploadFile = File(...)):
             status_code=500,
             detail=f"Internal server error processing the receipt: {error}",
         )
+
+
+@app.post("/convert-pdf-to-excel")
+async def convert_pdf_to_excel(
+    background_tasks: BackgroundTasks, file: UploadFile = File(...)
+):
+    """Convert an uploaded PDF into a downloadable editable Excel workbook."""
+    original_filename = file.filename or "uploaded.pdf"
+    suffix = Path(original_filename).suffix.lower()
+    if suffix != ".pdf":
+        raise HTTPException(status_code=400, detail="Only PDF uploads are supported.")
+
+    temporary_directory = tempfile.mkdtemp(prefix="receipt-pdf-")
+    input_path = Path(temporary_directory) / "input.pdf"
+    output_path = Path(temporary_directory) / "converted.xlsx"
+    try:
+        with input_path.open("wb") as temporary_file:
+            shutil.copyfileobj(file.file, temporary_file)
+
+        structure = extract_pdf_structure(str(input_path))
+        result = generate_full_workbook(structure, output_path)
+        if result["failed_pages"]:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "message": "One or more PDF pages could not be converted.",
+                    "failed_pages": result["failed_pages"],
+                },
+            )
+
+        if result["unsupported_fields"]:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "message": "The PDF contains unsupported form fields.",
+                    "unsupported_fields": result["unsupported_fields"],
+                },
+            )
+
+        background_tasks.add_task(shutil.rmtree, temporary_directory, ignore_errors=True)
+        download_name = f"{Path(original_filename).stem}_converted.xlsx"
+        return FileResponse(
+            path=output_path,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            filename=download_name,
+            background=background_tasks,
+        )
+    except HTTPException:
+        shutil.rmtree(temporary_directory, ignore_errors=True)
+        raise
+    except Exception as error:
+        shutil.rmtree(temporary_directory, ignore_errors=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error converting the PDF: {error}",
+        ) from error
 
 
 if __name__ == "__main__":

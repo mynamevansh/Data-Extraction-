@@ -14,6 +14,7 @@ import Loader from "../components/Loader";
 import ReceiptCard from "../components/ReceiptCard";
 import JsonViewer from "../components/JsonViewer";
 import Footer from "../components/Footer";
+import PdfToExcelCard from "../components/PdfToExcelCard";
 import { extractReceiptData, getApiMeta, normalizeReceiptResponse } from "../services/api";
 
 function toDisplayValue(value) {
@@ -185,7 +186,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-8 lg:grid-cols-[1.3fr_0.9fr]">
+          <div className="mt-10 grid gap-8 lg:grid-cols-2">
             <UploadCard
               file={selectedFile}
               isProcessing={isProcessing}
@@ -194,6 +195,8 @@ export default function Home() {
               onExtract={handleExtract}
               onFileSelect={handleFileSelect}
             />
+
+            <PdfToExcelCard />
 
             <div className="space-y-6">
               <div className="glass-card rounded-[28px] border border-slate-200/80 p-6 shadow-soft">

@@ -6,6 +6,7 @@ const apiClient = axios.create({
 });
 
 const uploadPath = import.meta.env.VITE_API_UPLOAD_PATH || "/extract";
+const pdfConversionPath = "/convert-pdf-to-excel";
 
 const sampleResultFiles = new Set([
   "receipt1",
@@ -143,9 +144,22 @@ export async function extractReceiptData(file, signal) {
   }
 }
 
+export async function convertPdfToExcel(file, signal) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await apiClient.post(pdfConversionPath, formData, {
+    signal,
+    responseType: "blob",
+  });
+
+  return response.data;
+}
+
 export function getApiMeta() {
   return {
     baseURL: apiClient.defaults.baseURL,
     uploadPath,
+    pdfConversionPath,
   };
 }

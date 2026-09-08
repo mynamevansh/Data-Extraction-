@@ -15,6 +15,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Protection, Si
 from openpyxl.utils import get_column_letter
 
 from .layout import LayoutElement, PDFLayout
+from .pdf_structure import PDFStructure
 
 
 class ExcelGenerationResult(TypedDict):
@@ -414,7 +415,7 @@ def _populate_full_sheet(workbook: Workbook, layout: PDFLayout) -> dict[str, obj
 
 
 def generate_full_workbook(
-    structure: dict[str, object], output_path: str | os.PathLike[str]
+    structure: PDFStructure, output_path: str | os.PathLike[str]
 ) -> dict[str, object]:
     """Convert every extracted PDF page into one editable Excel workbook."""
     from .layout import map_page_layout
