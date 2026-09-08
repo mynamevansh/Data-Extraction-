@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 from collections import defaultdict
 from statistics import median
 from pathlib import Path
@@ -10,7 +11,7 @@ from typing import TypedDict
 
 from openpyxl import Workbook
 from openpyxl.comments import Comment
-from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Protection, Side
 from openpyxl.utils import get_column_letter
 
 from .layout import LayoutElement, PDFLayout
@@ -177,14 +178,7 @@ def _visual_row_heights(layout: PDFLayout) -> dict[int, float]:
 
 def _clean_visual_text(text: str) -> str:
     """Reduce repeated dotted leaders while retaining meaningful text."""
-    parts = text.split("\n")
-    cleaned = []
-    for part in parts:
-        if part.count(".") >= 8:
-            prefix = part.split(".", 1)[0].rstrip()
-            part = f"{prefix} ..." if prefix else "..."
-        cleaned.append(part)
-    return "\n".join(cleaned)
+    return re.sub(r"\.{5,}", "...", text)
 
 
 def _visual_font(element: LayoutElement, layout: PDFLayout) -> Font:
@@ -204,6 +198,7 @@ def _visual_field_style(cell) -> None:
         bottom=Side(style="thin", color="4F81BD"),
     )
     cell.alignment = Alignment(horizontal="right", vertical="center", wrap_text=False)
+    cell.protection = Protection(locked=False)
 
 
 def generate_formatted_page_workbook(
@@ -224,26 +219,59 @@ def generate_formatted_page_workbook(
     worksheet.page_margins.top = 0.35
     worksheet.page_margins.bottom = 0.35
     worksheet.print_options.horizontalCentered = True
-    worksheet.print_area = f"A1:{get_column_letter(_visual_column_count(layout))}{layout['logical_rows']}"
-
     column_count = _visual_column_count(layout)
+    elements = list(layout["elements"])
     occupied: set[tuple[int, int]] = set()
+    positions: dict[int, tuple[int, int]] = {}
+    row_elements: dict[int, list[int]] = defaultdict(list)
+    for index, element in enumerate(elements):
+        row_elements[element["excel_row"]].append(index)
+
+    # Reserve native field locations first. Text is moved around these cells,
+    # never the other way around, so editable field mappings stay stable.
+    for row, indexes in row_elements.items():
+        for index in sorted(
+            (index for index in indexes if elements[index]["type"] == "field"),
+            key=lambda index: elements[index]["bbox"][0],
+        ):
+            base_column = _visual_column(elements[index], layout, column_count)
+            column = base_column
+            while (row, column) in occupied:
+                column += 1
+            occupied.add((row, column))
+            positions[index] = (row, column)
+
+    for row, indexes in row_elements.items():
+        for index in sorted(
+            (index for index in indexes if elements[index]["type"] != "field"),
+            key=lambda index: elements[index]["bbox"][0],
+        ):
+            base_column = _visual_column(elements[index], layout, column_count)
+            candidates = list(range(base_column, column_count + 1)) + list(
+                range(base_column - 1, 0, -1)
+            )
+            column = next(
+                (candidate for candidate in candidates if (row, candidate) not in occupied),
+                column_count + 1,
+            )
+            while (row, column) in occupied:
+                column += 1
+            occupied.add((row, column))
+            positions[index] = (row, column)
+
+    max_column = max(column for _, column in positions.values())
+    worksheet.print_area = f"A1:{get_column_letter(max_column)}{layout['logical_rows']}"
     column_widths: dict[int, float] = defaultdict(lambda: 2.4)
     field_cells: dict[str, str] = {}
     text_count = 0
     field_count = 0
     collisions = 0
 
-    for element in sorted(layout["elements"], key=lambda item: (item["excel_row"], item["bbox"][0])):
-        row = element["excel_row"]
-        column = _visual_column(element, layout, column_count)
-        while (row, column) in occupied:
-            column += 1
+    for index, element in enumerate(elements):
+        row, column = positions[index]
+        base_column = _visual_column(element, layout, column_count)
+        if column != base_column:
             collisions += 1
-            if column > column_count:
-                column = column_count
-                break
-        occupied.add((row, column))
         source_width = element["bbox"][2] - element["bbox"][0]
         text_width = len(element["text"].replace("\n", " ")) * 0.08
         column_widths[column] = max(
