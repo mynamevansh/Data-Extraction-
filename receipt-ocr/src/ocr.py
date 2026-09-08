@@ -6,14 +6,28 @@ import io
 import os
 import warnings
 from contextlib import redirect_stderr, redirect_stdout
-from typing import Dict, List
+from typing import List, Sequence, TypedDict
 
 import easyocr
 
 from .preprocess import preprocess_image
 
 
-def extract_text(image_path: str) -> List[Dict[str, float | str]]:
+class OCRResult(TypedDict):
+    """A detected text element with confidence and image coordinates."""
+
+    text: str
+    confidence: float
+    bbox: list[list[float]]
+
+
+def _normalize_bbox(bbox: Sequence[Sequence[float | int]]) -> list[list[float]]:
+    """Convert EasyOCR coordinates into JSON-friendly numeric pairs."""
+    return [[float(point[0]), float(point[1])] for point in bbox]
+
+
+def extract_text(image_path: str) -> List[OCRResult]:
+    """Extract detected text, confidence, and bounding-box coordinates."""
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image not found: {image_path}")
 
@@ -32,12 +46,13 @@ def extract_text(image_path: str) -> List[Dict[str, float | str]]:
         image_source = preprocessed_image if preprocessed_image is not None else image_path
         results = reader.readtext(image_source)
 
-    extracted: List[Dict[str, float | str]] = []
-    for _, text, confidence in results:
+    extracted: List[OCRResult] = []
+    for bbox, text, confidence in results:
         extracted.append(
             {
                 "text": text,
                 "confidence": float(confidence),
+                "bbox": _normalize_bbox(bbox),
             }
         )
 

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
 from src.main import generate_expense_summary, process_image
+from src.ocr import extract_text
 
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
@@ -19,6 +21,35 @@ def run_basic_tests() -> bool:
     if len(sample_images) < 2:
         print("Test Failed: need at least 2 sample images in data/")
         return False
+
+    ocr_results = extract_text(str(sample_images[0]))
+    if not ocr_results:
+        print(f"Test Failed: no OCR text for {sample_images[0].name}")
+        return False
+
+    for item in ocr_results:
+        if not str(item.get("text", "")).strip():
+            print("Test Failed: OCR result has empty text")
+            return False
+        if not isinstance(item.get("confidence"), float):
+            print("Test Failed: OCR result has no numeric confidence")
+            return False
+
+        bbox = item.get("bbox")
+        if not isinstance(bbox, list) or len(bbox) != 4:
+            print("Test Failed: OCR result has an invalid bounding box")
+            return False
+        if any(
+            not isinstance(point, list)
+            or len(point) != 2
+            or not all(isinstance(coordinate, (int, float)) for coordinate in point)
+            for point in bbox
+        ):
+            print("Test Failed: OCR bounding box contains invalid coordinates")
+            return False
+
+    print("Representative OCR output:")
+    print(json.dumps(ocr_results[:1], indent=2))
 
     for image_path in sample_images:
         result = process_image(str(image_path))
