@@ -1,5 +1,6 @@
 easyocr
 PyMuPDF
+openpyxl
 opencv-python
 fastapi
 uvicorn
