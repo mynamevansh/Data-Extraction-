@@ -9,6 +9,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.main import process_image
+from src.pdf import extract_pdf
 
 app = FastAPI(
     title="Receipt OCR API",
@@ -33,10 +34,10 @@ def read_root():
 @app.post("/extract")
 async def extract_receipt(file: UploadFile = File(...)):
     suffix = Path(file.filename or "").suffix.lower()
-    if suffix not in {".jpg", ".jpeg", ".png"}:
+    if suffix not in {".jpg", ".jpeg", ".png", ".pdf"}:
         raise HTTPException(
             status_code=400,
-            detail="Unsupported file type. Only JPG, JPEG, and PNG are allowed.",
+            detail="Unsupported file type. Only JPG, JPEG, PNG, and PDF are allowed.",
         )
 
     try:
@@ -44,7 +45,7 @@ async def extract_receipt(file: UploadFile = File(...)):
             shutil.copyfileobj(file.file, tmp)
             tmp_path = tmp.name
 
-        result = process_image(tmp_path)
+        result = {"pages": extract_pdf(tmp_path)} if suffix == ".pdf" else process_image(tmp_path)
 
         try:
             if os.path.exists(tmp_path):

@@ -1,4 +1,5 @@
 easyocr
+PyMuPDF
 opencv-python
 fastapi
 uvicorn

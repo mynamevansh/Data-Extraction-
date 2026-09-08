@@ -6,8 +6,46 @@ from pathlib import Path
 
 from src.main import generate_expense_summary, process_image
 from src.ocr import extract_text
+from src.pdf import extract_pdf, get_pdf_page_count
 
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+PDF_FIXTURES = (
+    Path("data/DownloadAttachment.pdf"),
+    Path("Receipt_OCR_Assignment_Vansh_Final.pdf"),
+)
+
+
+def run_pdf_tests() -> bool:
+    pdf_fixture = next((path for path in PDF_FIXTURES if path.is_file()), None)
+    if pdf_fixture is None:
+        print("PDF Test Skipped: no PDF fixture found")
+        return True
+
+    page_count = get_pdf_page_count(str(pdf_fixture))
+    print(f"PDF pages: {page_count}")
+    if page_count < 1:
+        print("PDF Test Failed: PDF has no pages")
+        return False
+
+    pages = extract_pdf(str(pdf_fixture), pages=[1])
+    if not pages or pages[0]["page"] != 1:
+        print("PDF Test Failed: page 1 was not extracted")
+        return False
+
+    print("PDF page 1 elements:")
+    print(json.dumps(pages[0]["elements"][:3], indent=2))
+    for element in pages[0]["elements"]:
+        if not element["text"].strip() or element["source"] not in {"native_pdf", "ocr"}:
+            print("PDF Test Failed: invalid extracted element")
+            return False
+        bbox = element["bbox"]
+        if not bbox or not all(
+            isinstance(coordinate, (int, float))
+            for coordinate in (bbox if isinstance(bbox[0], (int, float)) else [value for point in bbox for value in point])
+        ):
+            print("PDF Test Failed: invalid element coordinates")
+            return False
+    return True
 
 
 def run_basic_tests() -> bool:
@@ -20,6 +58,9 @@ def run_basic_tests() -> bool:
 
     if len(sample_images) < 2:
         print("Test Failed: need at least 2 sample images in data/")
+        return False
+
+    if not run_pdf_tests():
         return False
 
     ocr_results = extract_text(str(sample_images[0]))
