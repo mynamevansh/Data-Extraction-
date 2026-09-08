@@ -60,23 +60,27 @@ def _form_technology(document: pymupdf.Document) -> str:
 
 def _text_elements(page: pymupdf.Page) -> list[PDFStructureElement]:
     elements: list[PDFStructureElement] = []
-    for block in page.get_text("blocks", sort=True):
-        text = str(block[4]).strip()
-        if not text:
-            continue
-        elements.append(
-            {
-                "type": "text",
-                "text": text,
-                "bbox": [round(float(value), 4) for value in block[:4]],
-                "name": "",
-                "field_type": "",
-                "value": None,
-                "default_value": None,
-                "editable": False,
-                "field_flags": 0,
-            }
-        )
+    for block in page.get_text("dict", sort=True)["blocks"]:
+        for line in block.get("lines", []):
+            for span in line.get("spans", []):
+                text = str(span.get("text", "")).strip()
+                if not text:
+                    continue
+                elements.append(
+                    {
+                        "type": "text",
+                        "text": text,
+                        "bbox": [
+                            round(float(value), 4) for value in span["bbox"]
+                        ],
+                        "name": "",
+                        "field_type": "",
+                        "value": None,
+                        "default_value": None,
+                        "editable": False,
+                        "field_flags": 0,
+                    }
+                )
     return elements
 
 
